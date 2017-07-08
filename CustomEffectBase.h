@@ -30,8 +30,14 @@ class BlurEffect: public CustomEffectBase
 {
 public:
 	CREATE_FUNC(BlurEffect);
-	void setBlurRadius(float radius) { _blurRadius = radius; }
-	void setBlurSampleNum(float num) { _blurSampleNum = num; }
+	void setBlurRadius(float radius) {
+		_blurRadius = radius; 
+		getGLProgramState()->setUniformFloat("blurRadius", _blurRadius);		
+	}
+	void setBlurSampleNum(float num) { 
+		_blurSampleNum = num; 
+		getGLProgramState()->setUniformFloat("sampleNum", _blurSampleNum);
+	}
 
 	virtual void setTarget(cocos2d::Sprite* target);
 
