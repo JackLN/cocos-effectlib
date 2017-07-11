@@ -48,4 +48,11 @@ protected:
 	float _blurSampleNum;
 };
 
+class GrayEffect : public CustomEffectBase
+{
+public:
+	CREATE_FUNC(GrayEffect);
+protected:
+	bool init();
+};
 
