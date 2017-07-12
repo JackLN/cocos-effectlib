@@ -56,3 +56,11 @@ protected:
 	bool init();
 };
 
+class ColorOffsetEffect : public CustomEffectBase
+{
+public:
+	CREATE_FUNC(ColorOffsetEffect);
+protected:
+	bool init();
+};
+

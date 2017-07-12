@@ -148,3 +148,28 @@ bool GrayEffect::init()
 	initGLProgramState(effectgray_frag);
 	return true;
 }
+
+const char* coloroffset_frag = STRINGIFY(
+\n#ifdef GL_ES\n
+precision mediump float;
+\n#endif\n
+
+varying vec4 v_fragmentColor;
+varying vec2 v_texCoord;
+
+void main(void)
+{
+	vec4 c = texture2D(CC_Texture0, v_texCoord);
+	c = vec4(c.r / c.a, c.g / c.a, c.b / c.a, c.a);
+	c = clamp(c * v_fragmentColor, 0.0, 1.0);
+	c.rgb *= c.a;
+	gl_FragColor = c;
+}
+);
+
+//------------------ Effect Color Offset -----------------
+bool ColorOffsetEffect::init()
+{
+	initGLProgramState(coloroffset_frag);
+	return true;
+}
