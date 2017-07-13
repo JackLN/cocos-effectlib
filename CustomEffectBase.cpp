@@ -188,39 +188,41 @@ varying vec2 v_texCoord;
 
 uniform vec2 resolution;
 
-
-vec4 v4color = vec4(1.0,0.0,0.0,1.0);
-int iRange = 2;
+int iRange = 10;
 
 void main(void)
 {
-    float outter = 0.0f;
+    //float outter = 0.0f;
     float inner = 0.0f;
-    float count = 0.0f;
+    int count = 0;
     vec2 unit = 1.0 / resolution.xy;
 
     for (int k = -iRange; k < iRange; k++)
     {
         for (int j = -iRange; j < iRange; j++)
         {
-            vec4 c = texture2D(CC_Texture0, v_texCoord);
-            outter += 1.0 - c.a;
-            inner += c.a;
-            count += 1.0f;
+            vec4 c = texture2D(CC_Texture0, v_texCoord + vec2(unit.x * k , unit.y * j));
+			//outter += (1.0 - c.a);
+			inner += c.a;
+			count += 1;
         }
     }
 
     inner /= count;
-    outter /= count;
+    //outter /= count;
     
-    vec4 col = texture2D(CC_Texture0, v_texCoord) * v_fragmentColor;
+    vec4 col = texture2D(CC_Texture0, v_texCoord);
 
-    float out_alpha = max(col.a, inner);
+	float out_alpha = inner;
+
+	vec4 v4color = vec4(1.0,0.0,0.0,1.0);
+	col.rgb = col.rgb + (1.0 - col.a) * v4color.a * v4color.rgb;
+	col.a = out_alpha;
+	//col.a = 0.0f;
+	gl_FragColor = col * v_fragmentColor;
     
-    col.rgb = col.rgb + (1 - col.a) * v4color.a * v4color.rgb;
-    col.a = out_alpha;
-    
-    gl_FragColor = col;
+	/*gl_FragColor.rgb = col.rgb;
+	gl_FragColor.w = 0.0f;*/
 }
 );
 
