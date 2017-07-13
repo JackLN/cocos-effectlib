@@ -127,6 +127,8 @@ bool BlurEffect::init(float blurRadius /*= 10.0f*/, float sampleNum /*= 5.0f*/)
 	return true;
 }
 
+//------------------ Effect Gray -----------------
+
 const char* effectgray_frag = STRINGIFY(
 \n#ifdef GL_ES\n
 precision mediump float;
@@ -142,13 +144,14 @@ void main(void)
 	gl_FragColor.w = c.w;
 }
 );
-//------------------ Effect Gray -----------------
+
 bool GrayEffect::init()
 {
 	initGLProgramState(effectgray_frag);
 	return true;
 }
 
+//------------------ Effect color offset -----------------
 const char* coloroffset_frag = STRINGIFY(
 \n#ifdef GL_ES\n
 precision mediump float;
@@ -167,9 +170,70 @@ void main(void)
 }
 );
 
-//------------------ Effect Color Offset -----------------
 bool ColorOffsetEffect::init()
 {
 	initGLProgramState(coloroffset_frag);
 	return true;
+}
+
+//------------------ Effect Outer Glow -----------------
+
+const char* outerglow_frag = STRINGIFY(
+\n#ifdef GL_ES\n
+precision mediump float;
+\n#endif\n
+
+varying vec4 v_fragmentColor;
+varying vec2 v_texCoord;
+
+uniform vec2 resolution;
+
+
+vec4 v4color = vec4(1.0,0.0,0.0,1.0);
+int iRange = 2;
+
+void main(void)
+{
+    float outter = 0.0f;
+    float inner = 0.0f;
+    float count = 0.0f;
+    vec2 unit = 1.0 / resolution.xy;
+
+    for (int k = -iRange; k < iRange; k++)
+    {
+        for (int j = -iRange; j < iRange; j++)
+        {
+            vec4 c = texture2D(CC_Texture0, v_texCoord);
+            outter += 1.0 - c.a;
+            inner += c.a;
+            count += 1.0f;
+        }
+    }
+
+    inner /= count;
+    outter /= count;
+    
+    vec4 col = texture2D(CC_Texture0, v_texCoord) * v_fragmentColor;
+
+    float out_alpha = max(col.a, inner);
+    
+    col.rgb = col.rgb + (1 - col.a) * v4color.a * v4color.rgb;
+    col.a = out_alpha;
+    
+    gl_FragColor = col;
+}
+);
+
+bool OuterGlowEffect::init()
+{
+    initGLProgramState(outerglow_frag);
+    return true;
+}
+
+void OuterGlowEffect::setTarget(cocos2d::Sprite* target)
+{
+    CustomEffectBase::setTarget(target);
+
+    auto size = _pTarget->getTexture()->getContentSizeInPixels();
+    getGLProgramState()->setUniformVec2("resolution", size);
 }

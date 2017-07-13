@@ -64,3 +64,12 @@ protected:
 	bool init();
 };
 
+class OuterGlowEffect : public CustomEffectBase
+{
+public:
+    CREATE_FUNC(OuterGlowEffect);
+    virtual void setTarget(cocos2d::Sprite* target);
+protected:
+    bool init();
+};
+
