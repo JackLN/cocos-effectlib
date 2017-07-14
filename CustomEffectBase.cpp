@@ -187,8 +187,8 @@ varying vec4 v_fragmentColor;
 varying vec2 v_texCoord;
 
 uniform vec2 resolution;
-
-int iRange = 10;
+uniform int iRange;
+uniform vec4 glowColor;
 
 void main(void)
 {
@@ -202,8 +202,8 @@ void main(void)
         for (int j = -iRange; j < iRange; j++)
         {
             vec4 c = texture2D(CC_Texture0, v_texCoord + vec2(unit.x * k , unit.y * j));
-			//outter += (1.0 - c.a);
-			inner += c.a;
+            //outter += (1.0 - c.a);
+            inner += c.a;
 			count += 1;
         }
     }
@@ -211,15 +211,20 @@ void main(void)
     inner /= count;
     //outter /= count;
     
-    vec4 col = texture2D(CC_Texture0, v_texCoord);
+    vec4 col = texture2D(CC_Texture0, v_texCoord) * v_fragmentColor;
 
 	float out_alpha = inner;
 
-	vec4 v4color = vec4(1.0,0.0,0.0,1.0);
-	col.rgb = col.rgb + (1.0 - col.a) * v4color.a * v4color.rgb;
+    if (out_alpha < 0.001)
+    {
+        gl_FragColor = col;
+        return;
+    }
+
+	col.rgb = col.rgb + (1.0 - col.a) * glowColor.a * glowColor.rgb;
 	col.a = out_alpha;
 	//col.a = 0.0f;
-	gl_FragColor = col * v_fragmentColor;
+	gl_FragColor = col;
     
 	/*gl_FragColor.rgb = col.rgb;
 	gl_FragColor.w = 0.0f;*/
@@ -229,6 +234,10 @@ void main(void)
 bool OuterGlowEffect::init()
 {
     initGLProgramState(outerglow_frag);
+
+    _range = 5;
+    _glowColor = Color4F::ORANGE;
+
     return true;
 }
 
@@ -238,4 +247,6 @@ void OuterGlowEffect::setTarget(cocos2d::Sprite* target)
 
     auto size = _pTarget->getTexture()->getContentSizeInPixels();
     getGLProgramState()->setUniformVec2("resolution", size);
+    getGLProgramState()->setUniformInt("iRange", _range);
+    getGLProgramState()->setUniformVec4("glowColor", Vec4(_glowColor.r, _glowColor.g, _glowColor.b, _glowColor.a));
 }

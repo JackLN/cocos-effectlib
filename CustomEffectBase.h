@@ -69,7 +69,20 @@ class OuterGlowEffect : public CustomEffectBase
 public:
     CREATE_FUNC(OuterGlowEffect);
     virtual void setTarget(cocos2d::Sprite* target);
+
+    void setRange(int range){
+        _range = range;
+        getGLProgramState()->setUniformInt("iRange", _range);
+    }
+    void setGlowColor(Color4F glowColor){
+        _glowColor = glowColor;
+        getGLProgramState()->setUniformVec4("glowColor", Vec4(_glowColor.r, _glowColor.g, _glowColor.b, _glowColor.a));
+    }
+
 protected:
     bool init();
+
+    int _range;
+    Color4F _glowColor;
 };
 
