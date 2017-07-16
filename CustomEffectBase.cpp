@@ -192,10 +192,10 @@ uniform vec4 glowColor;
 
 void main(void)
 {
-    //float outter = 0.0f;
+    float outter = 0.0f;
 
     float range = iRange;
-    range = abs(sin(CC_Time[3])*3.0) + range;
+    //range = abs(sin(CC_Time[2])*10.0) + range;
 
     float inner = 0.0f;
     int count = 0;
@@ -206,33 +206,21 @@ void main(void)
         for (float j = -range; j < range; j+=1.0f)
         {
             vec4 c = texture2D(CC_Texture0, v_texCoord + vec2(unit.x * k , unit.y * j));
-            //outter += (1.0 - c.a);
+            outter += (1.0 - c.a);
             inner += c.a;
 			count += 1;
         }
     }
 
     inner /= count;
-    //outter /= count;
+    outter /= count;
     
     vec4 col = texture2D(CC_Texture0, v_texCoord) * v_fragmentColor;
-    vec4 tmp = col;
-
-	float out_alpha = inner;
-
+	float out_alpha = max(col.a,inner);
 	col.rgb = col.rgb + (1.0 - col.a) * glowColor.a * glowColor.rgb;
-	col.a = out_alpha;
-	//col.a = 0.0f;
-    if (out_alpha < 0.0001f)
-    {
-        gl_FragColor = col * tmp;
-        return;
-    }
 
-	gl_FragColor = col;
-    
-	/*gl_FragColor.rgb = col.rgb;
-	gl_FragColor.w = 0.0f;*/
+	gl_FragColor = col * out_alpha;
+	
 }
 );
 
