@@ -243,3 +243,40 @@ void OuterGlowEffect::setTarget(cocos2d::Sprite* target)
     getGLProgramState()->setUniformInt("iRange", _range);
     getGLProgramState()->setUniformVec4("glowColor", Vec4(_glowColor.r, _glowColor.g, _glowColor.b, _glowColor.a));
 }
+
+//========================= Effect Glow=========
+
+const char* glow_frag = STRINGIFY(
+\n#ifdef GL_ES\n
+precision mediump float;
+\n#endif\n
+
+varying vec4 v_fragmentColor;
+varying vec2 v_texCoord;
+
+vec4 outColor = vec4(1.0, 0.0, 0.0, 1.0);
+
+void main(void)
+{
+	vec4 normal = texture2D(CC_Texture0, v_texCoord) * v_fragmentColor;
+	float fTmpX = v_texCoord.x - (v_texCoord.x - 0.5f) * 0.2f;
+	float fTmpY = v_texCoord.y - (v_texCoord.y - 0.5f) * 0.2f;
+	vec4 col = texture2D(CC_Texture0, vec2(fTmpX, fTmpY)) * v_fragmentColor;
+
+	if (col.a > 0)
+	{
+		normal.rgb = normal.rgb + (1.0 - normal.a) * outColor.a * outColor.rgb;
+	}
+	
+	//col.rgb = col.rgb + (1.0 - col.a) * normal.a * normal.rgb;
+	gl_FragColor.rgb = normal.rgb;
+	gl_FragColor.a = col.a;
+}
+);
+
+
+bool GlowEffect::init()
+{
+	initGLProgramState(glow_frag);
+	return true;
+}
