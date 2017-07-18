@@ -256,21 +256,37 @@ varying vec2 v_texCoord;
 
 vec4 outColor = vec4(1.0, 0.0, 0.0, 1.0);
 
+uniform float minRange;
+uniform float maxRange;
+
 void main(void)
 {
+    //current scale
+    float offset = sin(CC_Time[3]) * (maxRange - minRange) * 0.5 + (maxRange - minRange);
+
 	vec4 normal = texture2D(CC_Texture0, v_texCoord) * v_fragmentColor;
-	float fTmpX = v_texCoord.x - (v_texCoord.x - 0.5f) * 0.2f;
-	float fTmpY = v_texCoord.y - (v_texCoord.y - 0.5f) * 0.2f;
+	float fTmpX = v_texCoord.x - (v_texCoord.x - 0.5f) * offset;
+	float fTmpY = v_texCoord.y - (v_texCoord.y - 0.5f) * offset;
 	vec4 col = texture2D(CC_Texture0, vec2(fTmpX, fTmpY)) * v_fragmentColor;
+
+    float dis = 1.0f - abs(v_texCoord.x - 0.5) * 2.0;
+    dis = dis * (1.0f - abs(v_texCoord.y - 0.5) * 2.0);
 
 	if (col.a > 0)
 	{
 		normal.rgb = normal.rgb + (1.0 - normal.a) * outColor.a * outColor.rgb;
 	}
+
+    if (normal.a > 0)
+    {
+        dis = 1.0f;
+    }
 	
+    
 	//col.rgb = col.rgb + (1.0 - col.a) * normal.a * normal.rgb;
 	gl_FragColor.rgb = normal.rgb;
-	gl_FragColor.a = col.a;
+	gl_FragColor.a = col.a + normal.a;
+    gl_FragColor *= dis;
 }
 );
 
@@ -278,5 +294,9 @@ void main(void)
 bool GlowEffect::init()
 {
 	initGLProgramState(glow_frag);
+
+    getGLProgramState()->setUniformFloat("minRange", 0.08f);
+    getGLProgramState()->setUniformFloat("maxRange", 0.13f);
+
 	return true;
 }
