@@ -202,8 +202,8 @@ void main(void)
     float outter = 0.0f;
 
     int range = iRange;
-    int iStep = iRange >> 1;
-    //range = abs(sin(CC_Time[2])*10.0) + range;
+    int iStep = iRange / 3;
+    //range = fract(abs(sin(CC_Time[2])*10.0)) + range;
 
     float inner = 0.0f;
     int count = 0;
@@ -236,7 +236,7 @@ bool OuterGlowEffect::init()
 {
     initGLProgramState(outerglow_frag);
 
-    _range = 5;
+    _range = 20;
     _glowColor = Color4F::ORANGE;
 
     return true;
