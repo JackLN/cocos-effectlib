@@ -86,6 +86,15 @@ protected:
     Color4F _glowColor;
 };
 
+class OutGlow2Effect : public CustomEffectBase
+{
+public:
+    CREATE_FUNC(OutGlow2Effect);
+    bool init();
+};
+
+
+
 class GlowEffect : public CustomEffectBase
 {
 public:

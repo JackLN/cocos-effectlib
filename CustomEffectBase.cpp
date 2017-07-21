@@ -137,8 +137,12 @@ precision mediump float;
 varying vec4 v_fragmentColor;
 varying vec2 v_texCoord;
 
+uniform float xx;
+
 void main(void)
 {
+    //float foo = xx;
+
 	vec4 c = texture2D(CC_Texture0, v_texCoord);
 	gl_FragColor.xyz = vec3(0.2126*c.r + 0.7152*c.g + 0.0722*c.b);
 	gl_FragColor.w = c.w;
@@ -148,6 +152,9 @@ void main(void)
 bool GrayEffect::init()
 {
 	initGLProgramState(effectgray_frag);
+
+    getGLProgramState()->setUniformFloat("xx",1.0f);
+
 	return true;
 }
 
@@ -194,21 +201,22 @@ void main(void)
 {
     float outter = 0.0f;
 
-    float range = iRange;
+    int range = iRange;
+    int iStep = iRange >> 1;
     //range = abs(sin(CC_Time[2])*10.0) + range;
 
     float inner = 0.0f;
     int count = 0;
     vec2 unit = 1.0 / resolution.xy;
 
-    for (float k = -range; k < range; k+=1.0f)
+    for (int k = -range; k < range; k+=iStep)
     {
-        for (float j = -range; j < range; j+=1.0f)
+        for (int j = -range; j < range; j+=iStep)
         {
             vec4 c = texture2D(CC_Texture0, v_texCoord + vec2(unit.x * k , unit.y * j));
             outter += (1.0 - c.a);
             inner += c.a;
-			count += 1;
+			count ++;
         }
     }
 
@@ -262,7 +270,8 @@ uniform float maxRange;
 void main(void)
 {
     //current scale
-    float offset = sin(CC_Time[3]) * (maxRange - minRange) * 0.5 + (maxRange - minRange);
+    //float offset = sin(CC_Time[3]) * (maxRange - minRange) * 0.5 + (maxRange - minRange);
+    float offset = 0.1f;
 
 	vec4 normal = texture2D(CC_Texture0, v_texCoord) * v_fragmentColor;
 	float fTmpX = v_texCoord.x - (v_texCoord.x - 0.5f) * offset;
@@ -286,17 +295,59 @@ void main(void)
 	//col.rgb = col.rgb + (1.0 - col.a) * normal.a * normal.rgb;
 	gl_FragColor.rgb = normal.rgb;
 	gl_FragColor.a = col.a + normal.a;
-    gl_FragColor *= dis;
+    //gl_FragColor *= dis;
 }
 );
-
-
 bool GlowEffect::init()
 {
 	initGLProgramState(glow_frag);
 
-    getGLProgramState()->setUniformFloat("minRange", 0.08f);
-    getGLProgramState()->setUniformFloat("maxRange", 0.13f);
+    /* getGLProgramState()->setUniformFloat("minRange", 0.5f);
+     getGLProgramState()->setUniformFloat("maxRange", 0.23f);*/
 
+	return true;
+}
+
+
+//========================= Effect OutGlow2=========
+
+const char* outglow2_frag = STRINGIFY(
+\n#ifdef GL_ES\n
+precision mediump float;
+\n#endif\n
+
+varying vec4 v_fragmentColor;
+varying vec2 v_texCoord;
+
+vec4 outColor = vec4(1.0, 0.5, 0.0, 1.0);
+float offsetx = 0.95f;
+float offsety = 0.7f;
+
+void main(void)
+{
+    float fTime = sin(CC_Time[3])*0.1;
+
+    offsetx += fTime;
+    offsety += fTime;
+
+    vec4 normal =  texture2D(CC_Texture0, v_texCoord) * v_fragmentColor; 
+
+    vec4 col = outColor;
+    float x = (v_texCoord.x - 0.5) / offsetx;
+    float y = (v_texCoord.y - 0.5) / offsety;
+
+    float dissq = x*x + y*y;
+    float alpha = 1.0- dissq * 4;
+    col.a = alpha;
+
+    float out_alpha = max(normal.a, alpha);
+    normal.rgb = normal.rgb + (1.0 - normal.a) * col.a * col.rgb;
+
+    gl_FragColor = normal * out_alpha;
+}
+);
+bool OutGlow2Effect::init()
+{
+    initGLProgramState(outglow2_frag);
 	return true;
 }
