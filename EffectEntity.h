@@ -9,7 +9,7 @@ protected:
     void generateMaterialID();
 };
 
-class EffectEntity
+class EffectEntity : public Sprite
 {
 
 };
