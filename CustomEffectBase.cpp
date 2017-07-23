@@ -202,7 +202,7 @@ void main(void)
     float outter = 0.0f;
 
     int range = iRange;
-    int iStep = iRange / 3;
+    int iStep = iRange / 2;
     //range = fract(abs(sin(CC_Time[2])*10.0)) + range;
 
     float inner = 0.0f;
