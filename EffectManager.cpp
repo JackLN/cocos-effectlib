@@ -50,8 +50,8 @@ void EffectManager::addEffect(CustomEffectBase* effect, Sprite* target)
         HASH_ADD_PTR(_effects, effect, element);
     }
 
-    AllocEffectArray(element);
-    ccArrayAppendObject(element->targets, target);
+    //AllocEffectArray(element);
+    //ccArrayAppendObject(element->targets, target);
 }
 
 void EffectManager::removeAllEffect()
@@ -63,11 +63,11 @@ void EffectManager::AllocEffectArray(tHashEffect* element)
 {
     if (element->targets == nullptr)
     {
-        element->targets = ccArrayNew(4);
+        //element->targets = ccArrayNew(4);
     }
     else if (element->targets->num == element->targets->max)
     {
-        ccArrayDoubleCapacity(element->targets);
+        //ccArrayDoubleCapacity(element->targets);
     }
 }
 

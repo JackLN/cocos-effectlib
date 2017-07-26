@@ -2,3 +2,5 @@
 CustomEffectBase.h
 CustomEffectBase.h
 CustomEffectBase.cpp
+test/ShaderTest.h
+test/ShaderTest.cpp
