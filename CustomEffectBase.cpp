@@ -137,8 +137,6 @@ precision mediump float;
 varying vec4 v_fragmentColor;
 varying vec2 v_texCoord;
 
-uniform float xx;
-
 void main(void)
 {
     //float foo = xx;
@@ -152,8 +150,6 @@ void main(void)
 bool GrayEffect::init()
 {
 	initGLProgramState(effectgray_frag);
-
-    getGLProgramState()->setUniformFloat("xx",1.0f);
 
 	return true;
 }
@@ -202,7 +198,7 @@ void main(void)
     float outter = 0.0f;
 
     int range = iRange;
-    int iStep = iRange / 2;
+    int iStep = 1;
     //range = fract(abs(sin(CC_Time[2])*10.0)) + range;
 
     float inner = 0.0f;
@@ -227,8 +223,9 @@ void main(void)
 	float out_alpha = max(col.a,inner);
 	col.rgb = col.rgb + (1.0 - col.a) * glowColor.a * glowColor.rgb;
 
-	gl_FragColor = col * out_alpha;
-	
+	//gl_FragColor.rgb = col.rgb;
+    //gl_FragColor.a = col.a *out_alpha;
+    gl_FragColor = col * out_alpha;
 }
 );
 
@@ -350,4 +347,50 @@ bool OutGlow2Effect::init()
 {
     initGLProgramState(outglow2_frag);
 	return true;
+}
+
+//===================Outer Glow Tex =========================
+
+const char* outerglowtex_frag = STRINGIFY(
+\n#ifdef GL_ES\n
+precision mediump float;
+\n#endif\n
+
+varying vec4 v_fragmentColor;
+varying vec2 v_texCoord;
+
+uniform int iRange;
+uniform vec4 glowColor;
+
+float time = sin(CC_Time[2]);
+int iMinRange = 10;
+
+void main(void)
+{
+    float fCurRange = (iRange - iMinRange)*time*0.5 + 15;
+    vec4 col = texture2D(CC_Texture0, v_texCoord) * v_fragmentColor;
+    gl_FragColor.rgb = glowColor.rgb;
+
+    float out_alpha = smoothstep(0.0f,20.0f,fCurRange);
+    gl_FragColor.a = out_alpha*col.a;
+}
+);
+
+bool OuterGlowTex::init()
+{
+    initGLProgramState(outerglowtex_frag);
+
+    _range = 20;
+    _glowColor = Color4F::ORANGE;
+
+    return true;
+}
+
+void OuterGlowTex::setTarget(cocos2d::Sprite* target)
+{
+    CustomEffectBase::setTarget(target);
+
+    auto size = _pTarget->getTexture()->getContentSizeInPixels();
+    getGLProgramState()->setUniformInt("iRange", _range);
+    getGLProgramState()->setUniformVec4("glowColor", Vec4(_glowColor.r, _glowColor.g, _glowColor.b, _glowColor.a));
 }
