@@ -15,6 +15,7 @@ class EffectEntity : public Sprite
 {
 public:
 	static EffectEntity* create(const std::string& filename);
+    static EffectEntity* createWithTexture(Texture2D *texture);
 public:
 	virtual void draw(Renderer *renderer, const Mat4 &transform, uint32_t flags) override;
 protected:

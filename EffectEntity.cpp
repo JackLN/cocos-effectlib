@@ -99,3 +99,15 @@ void EffectEntity::draw(Renderer *renderer, const Mat4 &transform, uint32_t flag
 #endif //CC_SPRITE_DEBUG_DRAW
 	}
 }
+
+EffectEntity* EffectEntity::createWithTexture(Texture2D *texture)
+{
+    EffectEntity *sprite = new (std::nothrow) EffectEntity();
+    if (sprite && sprite->initWithTexture(texture))
+    {
+        sprite->autorelease();
+        return sprite;
+    }
+    CC_SAFE_DELETE(sprite);
+    return nullptr;
+}
