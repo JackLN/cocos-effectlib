@@ -362,12 +362,12 @@ varying vec2 v_texCoord;
 uniform int iRange;
 uniform vec4 glowColor;
 
-float time = sin(CC_Time[2]);
-int iMinRange = 10;
-
 void main(void)
 {
-    float fCurRange = (iRange - iMinRange)*time*0.5 + 15;
+    float fTime = sin(CC_Time[2]);
+    int iMinRange = 10;
+
+    float fCurRange = (float(iRange) - float(iMinRange))*fTime*0.5 + 15.0f;
     vec4 col = texture2D(CC_Texture0, v_texCoord) * v_fragmentColor;
     gl_FragColor.rgb = glowColor.rgb;
 
@@ -390,7 +390,6 @@ void OuterGlowTex::setTarget(cocos2d::Sprite* target)
 {
     CustomEffectBase::setTarget(target);
 
-    auto size = _pTarget->getTexture()->getContentSizeInPixels();
     getGLProgramState()->setUniformInt("iRange", _range);
     getGLProgramState()->setUniformVec4("glowColor", Vec4(_glowColor.r, _glowColor.g, _glowColor.b, _glowColor.a));
 }
