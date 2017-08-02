@@ -3,6 +3,16 @@
 
 USING_NS_CC;
 
+struct IEffectSink;
+
+
+struct IEffectSink
+{
+    virtual void OnCreateTexture(std::string texture) {};
+    virtual void OnTextureSuccess(std::string texture) {};
+    virtual void OnTextureError(std::string texture) {};
+};
+
 class EffectCommond : public TrianglesCommand
 {
 public:
