@@ -1,5 +1,8 @@
 #include "EffectEntity.h"
 #include "../external/xxhash/xxhash.h"
+#include "EffectTextureCache.h"
+
+#define STRINGIFY(A)  #A
 
 void EffectCommond::init(float globalOrder, GLuint textureID, GLProgramState* glProgramState, BlendFunc blendType, const Triangles& triangles, const Mat4& mv, uint32_t flags)
 {
@@ -46,18 +49,6 @@ void EffectCommond::generateMaterialID()
     //}
 }
 
-EffectEntity* EffectEntity::create(const std::string& filename)
-{
-	EffectEntity *pRe = new (std::nothrow) EffectEntity();
-	if (pRe && pRe->initWithFile(filename))
-	{
-		pRe->autorelease();
-		return pRe;
-	}
-	CC_SAFE_DELETE(pRe);
-	return nullptr;
-}
-
 void EffectEntity::draw(Renderer *renderer, const Mat4 &transform, uint32_t flags)
 {
 #if CC_USE_CULLING
@@ -102,14 +93,145 @@ void EffectEntity::draw(Renderer *renderer, const Mat4 &transform, uint32_t flag
 	}
 }
 
-EffectEntity* EffectEntity::createWithTexture(Texture2D *texture)
+bool EffectEntity::initWithTexture(Texture2D *texture, const Rect& rect, bool rotated)
 {
-    EffectEntity *sprite = new (std::nothrow) EffectEntity();
-    if (sprite && sprite->initWithTexture(texture))
+    bool result;
+    if (Node::init())
     {
-        sprite->autorelease();
-        return sprite;
+        _batchNode = nullptr;
+
+        _recursiveDirty = false;
+        setDirty(false);
+
+        _opacityModifyRGB = true;
+
+        _blendFunc = BlendFunc::ALPHA_PREMULTIPLIED;
+
+        _flippedX = _flippedY = false;
+
+        // default transform anchor: center
+        setAnchorPoint(Vec2(0.5f, 0.5f));
+
+        // zwoptex default values
+        _offsetPosition.setZero();
+
+        // clean the Quad
+        memset(&_quad, 0, sizeof(_quad));
+
+        // Atlas: Color
+        _quad.bl.colors = Color4B::WHITE;
+        _quad.br.colors = Color4B::WHITE;
+        _quad.tl.colors = Color4B::WHITE;
+        _quad.tr.colors = Color4B::WHITE;
+
+        // shader state
+
+        //auto glProgram = GLProgram::getAttribLocation()
+        setGLProgramState(EffectTextureCache::getInstance()->getOrCreateProgramStateWithShader(_effectName,ccPositionTextureColor_noMVP_vert, _fragShader.c_str()));
+
+        // update texture (calls updateBlendFunc)
+        setTexture(texture);
+        setTextureRect(rect, rotated, rect.size);
+
+        // by default use "Self Render".
+        // if the sprite is added to a batchnode, then it will automatically switch to "batchnode Render"
+        setBatchNode(nullptr);
+        result = true;
     }
-    CC_SAFE_DELETE(sprite);
+    else
+    {
+        result = false;
+    }
+    _recursiveDirty = true;
+    setDirty(true);
+    return result;
+}
+
+bool EffectEntity::initWithTexture(Texture2D *texture)
+{
+    CCASSERT(texture != nullptr, "Invalid texture for sprite");
+
+    Rect rect = Rect::ZERO;
+    rect.size = texture->getContentSize();
+
+    return initWithTexture(texture, rect);
+}
+
+bool EffectEntity::initWithTexture(Texture2D *texture, const Rect& rect)
+{
+    return initWithTexture(texture, rect, false);
+}
+
+bool EffectEntity::initWithFile(const std::string& filename)
+{
+    if (filename.empty())
+    {
+        CCLOG("Call Sprite::initWithFile with blank resource filename.");
+        return false;
+    }
+
+    _fileName = filename;
+    _fileType = 0;
+
+    Texture2D *texture = Director::getInstance()->getTextureCache()->addImage(filename);
+    if (texture)
+    {
+        Rect rect = Rect::ZERO;
+        rect.size = texture->getContentSize();
+        return initWithTexture(texture, rect);
+    }
+
+    // don't release here.
+    // when load texture failed, it's better to get a "transparent" sprite then a crashed program
+    // this->release();
+    return false;
+}
+
+
+
+EffectTextureEntity::EffectTextureEntity()
+:_effectTexture(nullptr)
+{
+
+}
+
+bool EffectTextureEntity::init(const std::string& filename)
+{
+    return false;
+}
+
+bool EffectTextureEntity::initWithTexture(Texture2D* texture)
+{
+    return false;
+}
+
+std::string GrayEntity::_effectName = "GrayEntity";
+std::string GrayEntity::_fragShader = STRINGIFY(
+\n#ifdef GL_ES\n
+precision mediump float;
+\n#endif\n
+
+varying vec4 v_fragmentColor;
+varying vec2 v_texCoord;
+
+void main(void)
+{
+    vec4 c = texture2D(CC_Texture0, v_texCoord);
+    gl_FragColor.xyz = vec3(0.2126*c.r + 0.7152*c.g + 0.0722*c.b);
+    gl_FragColor.w = c.w;
+}
+);
+
+GrayEntity* GrayEntity::create(const std::string& filename)
+{
+    GrayEntity *entity = new (std::nothrow) GrayEntity();
+    if (entity && entity->initWithFile(filename))
+    {
+        entity->autorelease();
+        return entity;
+    }
+    CC_SAFE_DELETE(entity);
     return nullptr;
 }
+
+
