@@ -11,18 +11,6 @@ EffectTextureCache * EffectTextureCache::getInstance(void)
     return s_instance;
 }
 
- void EffectTextureCache::createEffectTextureAsync(IEffectSink* pSink, std::string fileName)
-{
-    auto it = _textures.find(fileName);
-    if (it != _textures.end())
-    {
-        pSink->OnTextureSuccess(it->second);
-        return;
-    }
-    
-
-
-}
 
  GLProgramState* EffectTextureCache::getOrCreateProgramStateWithShader(std::string name, const GLchar* vShaderByteArray, const GLchar* fShaderByteArray)
  {
@@ -36,4 +24,18 @@ EffectTextureCache * EffectTextureCache::getInstance(void)
      }
 
      return GLProgramState::getOrCreateWithGLProgram(glprogram);
+ }
+
+ Texture2D* EffectTextureCache::getTextureWithName(const std::string& name)
+ {
+     auto it = _textures.find(name);
+     if (it != _textures.end())
+         return it->second;
+
+     return nullptr;
+ }
+
+ void EffectTextureCache::addTextureWithName(const std::string& name,Texture2D* texture)
+ {
+     _textures.insert(std::make_pair(name, texture));
  }

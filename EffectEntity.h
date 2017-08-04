@@ -32,6 +32,7 @@ public:
     virtual bool initWithTexture(Texture2D *texture, const Rect& rect) override;
     virtual bool initWithTexture(Texture2D *texture, const Rect& rect, bool rotated) override;
 	virtual void draw(Renderer *renderer, const Mat4 &transform, uint32_t flags) override;
+    virtual void setUniformInfo(){} //设置uniform值
 protected:
 	EffectCommond _effectCommond;
     static std::string _effectName;
@@ -41,8 +42,12 @@ protected:
 class EffectTextureEntity : public EffectEntity
 {
 public:
-    virtual bool init(const std::string& filename);
-    virtual bool initWithTexture(Texture2D* texture);
+    virtual bool initWithFile(const std::string& filename) override;
+    virtual bool initWithTexture(Texture2D *texture) override;
+    virtual bool initWithTexture(Texture2D *texture, const Rect& rect) override;
+    virtual bool initWithTexture(Texture2D *texture, const Rect& rect, bool rotated) override;
+    virtual bool pretrentTexture(const std::string& filename); //预处理Texture
+    virtual void setUniformInfo(){} //设置uniform值
 protected:
     EffectTextureEntity();
     Texture2D* _effectTexture;
@@ -52,4 +57,17 @@ class GrayEntity : public EffectEntity
 {
 public:
     static GrayEntity* create(const std::string& filename);
+};
+
+class OutGlowEntity : public EffectTextureEntity
+{
+public:
+    static OutGlowEntity* create(const std::string& filename,Color4F glowColor,int rangeMin,int rangeMax);
+    virtual bool init(const std::string& filename, Color4F glowColor, int rangeMin, int rangeMax);
+    virtual bool pretrentTexture(const std::string& filename);
+    virtual void setUniformInfo() override;
+protected:
+    Color4F _glowColor;
+    int _rangeMin;
+    int _rangeMax;
 };

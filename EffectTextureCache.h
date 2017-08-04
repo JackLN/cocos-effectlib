@@ -9,7 +9,8 @@ class EffectTextureCache
 {
 public:
     static EffectTextureCache *getInstance(void);
-    void               createEffectTextureAsync(IEffectSink* pSink,std::string fileName);//异步处理图片资源
+    void               addTextureWithName(const std::string& name,Texture2D* texture);
+    Texture2D*         getTextureWithName(const std::string& name);
     GLProgramState*    getOrCreateProgramStateWithShader(std::string name,const GLchar* vShaderByteArray, const GLchar* fShaderByteArray);
 private:
     static EffectTextureCache *s_instance;

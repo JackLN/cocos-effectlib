@@ -128,7 +128,7 @@ bool EffectEntity::initWithTexture(Texture2D *texture, const Rect& rect, bool ro
 
         //auto glProgram = GLProgram::getAttribLocation()
         setGLProgramState(EffectTextureCache::getInstance()->getOrCreateProgramStateWithShader(_effectName,ccPositionTextureColor_noMVP_vert, _fragShader.c_str()));
-
+        setUniformInfo();
         // update texture (calls updateBlendFunc)
         setTexture(texture);
         setTextureRect(rect, rotated, rect.size);
@@ -195,32 +195,119 @@ EffectTextureEntity::EffectTextureEntity()
 
 }
 
-bool EffectTextureEntity::init(const std::string& filename)
+bool EffectTextureEntity::initWithFile(const std::string& filename)
 {
-    return false;
+    if (filename.empty())
+    {
+        CCLOG("Call Sprite::initWithFile with blank resource filename.");
+        return false;
+    }
+
+    _fileName = filename + _effectName;
+    _fileType = 0;
+
+    Texture2D *texture = EffectTextureCache::getInstance()->getTextureWithName(_fileName);
+    if (texture)
+    {
+        Rect rect = Rect::ZERO;
+        rect.size = texture->getContentSize();
+        return initWithTexture(texture, rect);
+    }
+
+    return pretrentTexture(filename);
 }
 
 bool EffectTextureEntity::initWithTexture(Texture2D* texture)
 {
+    CCASSERT(texture != nullptr, "Invalid texture for sprite");
+
+    Rect rect = Rect::ZERO;
+    rect.size = texture->getContentSize();
+
+    return initWithTexture(texture, rect);
+}
+
+bool EffectTextureEntity::initWithTexture(Texture2D *texture, const Rect& rect)
+{
+    return initWithTexture(texture, rect, false);
+}
+
+bool EffectTextureEntity::initWithTexture(Texture2D *texture, const Rect& rect, bool rotated)
+{
+    bool result;
+    if (Node::init())
+    {
+        _batchNode = nullptr;
+
+        _recursiveDirty = false;
+        setDirty(false);
+
+        _opacityModifyRGB = true;
+
+        _blendFunc = BlendFunc::ALPHA_PREMULTIPLIED;
+
+        _flippedX = _flippedY = false;
+
+        // default transform anchor: center
+        setAnchorPoint(Vec2(0.5f, 0.5f));
+
+        // zwoptex default values
+        _offsetPosition.setZero();
+
+        // clean the Quad
+        memset(&_quad, 0, sizeof(_quad));
+
+        // Atlas: Color
+        _quad.bl.colors = Color4B::WHITE;
+        _quad.br.colors = Color4B::WHITE;
+        _quad.tl.colors = Color4B::WHITE;
+        _quad.tr.colors = Color4B::WHITE;
+
+        // shader state
+
+        //auto glProgram = GLProgram::getAttribLocation()
+        setGLProgramState(EffectTextureCache::getInstance()->getOrCreateProgramStateWithShader(_effectName, ccPositionTextureColor_noMVP_vert, _fragShader.c_str()));
+        setUniformInfo();
+
+        // update texture (calls updateBlendFunc)
+        setTexture(texture);
+        setTextureRect(rect, rotated, rect.size);
+
+        // by default use "Self Render".
+        // if the sprite is added to a batchnode, then it will automatically switch to "batchnode Render"
+        setBatchNode(nullptr);
+        result = true;
+    }
+    else
+    {
+        result = false;
+    }
+    _recursiveDirty = true;
+    setDirty(true);
+    return result;
+}
+
+bool EffectTextureEntity::pretrentTexture(const std::string& filename)
+{
     return false;
 }
 
-std::string GrayEntity::_effectName = "GrayEntity";
-std::string GrayEntity::_fragShader = STRINGIFY(
-\n#ifdef GL_ES\n
-precision mediump float;
-\n#endif\n
-
-varying vec4 v_fragmentColor;
-varying vec2 v_texCoord;
-
-void main(void)
-{
-    vec4 c = texture2D(CC_Texture0, v_texCoord);
-    gl_FragColor.xyz = vec3(0.2126*c.r + 0.7152*c.g + 0.0722*c.b);
-    gl_FragColor.w = c.w;
-}
-);
+//std::string GrayEntity::_effectName = "GrayEntity";
+//std::string GrayEntity::_fragShader = STRINGIFY(
+//\n#ifdef GL_ES\n
+//precision mediump float;
+//\n#endif\n
+//
+//varying vec4 v_fragmentColor;
+//varying vec2 v_texCoord;
+//
+//void main(void)
+//{
+//    vec4 c = texture2D(CC_Texture0, v_texCoord);
+//    gl_FragColor.xyz = vec3(0.2126*c.r + 0.7152*c.g + 0.0722*c.b);
+//    gl_FragColor.w = c.w;
+//}
+//);
 
 GrayEntity* GrayEntity::create(const std::string& filename)
 {
@@ -234,4 +321,135 @@ GrayEntity* GrayEntity::create(const std::string& filename)
     return nullptr;
 }
 
+std::string OutGlowEntity::_effectName = "OutGlowEntity";
+std::string OutGlowEntity::_fragShader = STRINGIFY(
+\n#ifdef GL_ES\n
+precision mediump float;
+\n#endif\n
+
+varying vec4 v_fragmentColor;
+varying vec2 v_texCoord;
+
+uniform int iRange;
+uniform int iMinRange;
+uniform vec4 glowColor;
+
+void main(void)
+{
+    float fTime = sin(CC_Time[2]);
+    //int iMinRange = 10;
+
+    float fCurRange = (float(iRange) - float(iMinRange))*fTime*0.5 + 15.0f;
+    vec4 col = texture2D(CC_Texture0, v_texCoord) * v_fragmentColor;
+    gl_FragColor.rgb = glowColor.rgb;
+
+    float out_alpha = smoothstep(0.0f, 20.0f, fCurRange);
+    gl_FragColor.a = out_alpha*col.a;
+}
+);
+
+OutGlowEntity* OutGlowEntity::create(const std::string& filename, Color4F glowColor, int rangeMin, int rangeMax)
+{
+    OutGlowEntity* entity = new (std::nothrow)OutGlowEntity();
+    if (entity && entity->init(filename,glowColor,rangeMin,rangeMax))
+    {
+        entity->autorelease();
+        return entity;
+    }
+    CC_SAFE_DELETE(entity);
+    return nullptr;
+}
+
+
+bool OutGlowEntity::init(const std::string& filename, Color4F glowColor, int rangeMin, int rangeMax)
+{
+    _glowColor = glowColor;
+    _rangeMax = rangeMax;
+    _rangeMin = rangeMin;
+
+    return initWithFile(filename);
+}
+
+bool OutGlowEntity::pretrentTexture(const std::string& filename)
+{
+    std::string fullpath = FileUtils::getInstance()->fullPathForFilename(filename);
+    auto image = new Image();
+    image->initWithImageFile(fullpath);
+
+    unsigned char* pImgData = image->getData();
+    auto iDataLen = image->getDataLen();
+    int iWidth = image->getWidth();
+    int iHeight = image->getHeight();
+
+    //target data
+    unsigned char* pTarData = (unsigned char*)(malloc(iDataLen * sizeof(unsigned char)));
+    memset(pTarData,0,iDataLen * sizeof(unsigned char));
+
+    //change image buffer data
+    int i;
+    int j;
+    int iMaxOffset = _rangeMax;
+    unsigned char* pDataStart = image->getData();
+    for (i = 0; i < iWidth ; ++i)
+    {
+        for (j = 0; j < iHeight; ++j)
+        {
+            //不透明的不需要处理
+            int offset = (iWidth* i + j) * 4;
+            GLubyte byteValue = *(pImgData += 3);
+            pImgData++;
+            if (byteValue == 255)
+            {
+                *(pTarData + offset+ 3) = 0;
+                continue;
+            }
+                
+            int iOriginA = *(pImgData - 1);
+            int iStartX = std::max(0,i - iMaxOffset);
+            int iEndX = std::min(i + iMaxOffset, iWidth);
+            int iStartY = std::max(0, j - iMaxOffset);
+            int iEndY = std::min(j + iMaxOffset, iHeight);
+
+            int iCnt = 0;
+
+            //在周围的像素点取alpha均值
+            for (int m = iStartX; m < iEndX; ++m)
+            {
+                for (int n = iStartY; n < iEndY; ++n)
+                {
+					int iAlphaTmp = *(pDataStart + (m*iWidth + n) * 4 + 3);
+                    if (iAlphaTmp > 100) //不透明计数
+                        iCnt++;
+                }
+            }
+
+            int iAlpha = std::max(iCnt * 255 / ((iEndY - iStartY) * (iEndX - iStartX)),iOriginA);
+
+            //test
+            //*(pTarData + offset + 1) = 255;
+
+            //save alpha
+            *(pTarData + offset + 3) = iAlpha;
+        }
+    }
+
+    //copy image data
+    memcpy(image->getData(), pTarData, image->getDataLen());
+    CC_SAFE_FREE(pTarData);
+
+    //create texture & sprite
+    Texture2D* tex = new Texture2D();
+    tex->initWithData(image->getData(), image->getDataLen(), Texture2D::PixelFormat::RGBA8888, iWidth, iHeight, CCSize(iWidth, iHeight));
+    EffectTextureCache::getInstance()->addTextureWithName(filename+_effectName,tex);
+    return initWithTexture(tex);
+
+    //return true;
+}
+
+void OutGlowEntity::setUniformInfo()
+{
+    getGLProgramState()->setUniformInt("iRange", _rangeMax);
+    getGLProgramState()->setUniformInt("iMinRange", _rangeMin);
+    getGLProgramState()->setUniformVec4("glowColor", Vec4(_glowColor.r, _glowColor.g, _glowColor.b, _glowColor.a));
+}
 
