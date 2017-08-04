@@ -49,6 +49,9 @@ void EffectCommond::generateMaterialID()
     //}
 }
 
+const char* EFFECT_NAME_OUTGLOW = "OutGlowEntity";
+const char* EFFECT_NAME_GRAY = "GrayEntity";
+
 void EffectEntity::draw(Renderer *renderer, const Mat4 &transform, uint32_t flags)
 {
 #if CC_USE_CULLING
@@ -292,22 +295,21 @@ bool EffectTextureEntity::pretrentTexture(const std::string& filename)
     return false;
 }
 
-//std::string GrayEntity::_effectName = "GrayEntity";
-//std::string GrayEntity::_fragShader = STRINGIFY(
-//\n#ifdef GL_ES\n
-//precision mediump float;
-//\n#endif\n
-//
-//varying vec4 v_fragmentColor;
-//varying vec2 v_texCoord;
-//
-//void main(void)
-//{
-//    vec4 c = texture2D(CC_Texture0, v_texCoord);
-//    gl_FragColor.xyz = vec3(0.2126*c.r + 0.7152*c.g + 0.0722*c.b);
-//    gl_FragColor.w = c.w;
-//}
-//);
+const char* effect_gray_frag = STRINGIFY(
+\n#ifdef GL_ES\n
+precision mediump float;
+\n#endif\n
+
+varying vec4 v_fragmentColor;
+varying vec2 v_texCoord;
+
+void main(void)
+{
+    vec4 c = texture2D(CC_Texture0, v_texCoord);
+    gl_FragColor.xyz = vec3(0.2126*c.r + 0.7152*c.g + 0.0722*c.b);
+    gl_FragColor.w = c.w;
+}
+);
 
 GrayEntity* GrayEntity::create(const std::string& filename)
 {
@@ -321,8 +323,13 @@ GrayEntity* GrayEntity::create(const std::string& filename)
     return nullptr;
 }
 
-std::string OutGlowEntity::_effectName = "OutGlowEntity";
-std::string OutGlowEntity::_fragShader = STRINGIFY(
+GrayEntity::GrayEntity()
+{
+    _effectName = EFFECT_NAME_GRAY;
+    _fragShader = effect_gray_frag;
+}
+
+const char* effect_outglow_frag = STRINGIFY(
 \n#ifdef GL_ES\n
 precision mediump float;
 \n#endif\n
@@ -451,5 +458,11 @@ void OutGlowEntity::setUniformInfo()
     getGLProgramState()->setUniformInt("iRange", _rangeMax);
     getGLProgramState()->setUniformInt("iMinRange", _rangeMin);
     getGLProgramState()->setUniformVec4("glowColor", Vec4(_glowColor.r, _glowColor.g, _glowColor.b, _glowColor.a));
+}
+
+OutGlowEntity::OutGlowEntity()
+{
+    _effectName = EFFECT_NAME_OUTGLOW;
+    _fragShader = effect_outglow_frag;
 }
 

@@ -35,8 +35,8 @@ public:
     virtual void setUniformInfo(){} //…Ë÷√uniform÷µ
 protected:
 	EffectCommond _effectCommond;
-    static std::string _effectName;
-    static std::string _fragShader;
+    std::string _effectName;
+    std::string _fragShader;
 };
 
 class EffectTextureEntity : public EffectEntity
@@ -57,6 +57,8 @@ class GrayEntity : public EffectEntity
 {
 public:
     static GrayEntity* create(const std::string& filename);
+protected:
+    GrayEntity();
 };
 
 class OutGlowEntity : public EffectTextureEntity
@@ -67,6 +69,8 @@ public:
     virtual bool pretrentTexture(const std::string& filename);
     virtual void setUniformInfo() override;
 protected:
+    OutGlowEntity();
+
     Color4F _glowColor;
     int _rangeMin;
     int _rangeMax;
