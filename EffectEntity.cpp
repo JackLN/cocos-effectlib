@@ -207,10 +207,10 @@ bool EffectTextureEntity::initWithFile(const std::string& filename)
         return false;
     }
 
-    _fileName = filename + _effectName;
+    _fileName = GENERATE_TEX_NAME(filename,_effectName);
     _fileType = 0;
 
-    Texture2D *texture = EffectTextureCache::getInstance()->getTextureWithName(_fileName,_effectName);
+    Texture2D *texture = EffectTextureCache::getInstance()->getTextureWithName(filename,_effectName);
     if (texture)
     {
         Rect rect = Rect::ZERO;
@@ -220,7 +220,7 @@ bool EffectTextureEntity::initWithFile(const std::string& filename)
 
     //return pretrentTexture(filename);
     EffectTextureCache::getInstance()->pretrentTexture(filename,_effectName,this);
-    return initWithTexture(nullptr, Rect::ZERO );;
+    return initWithTexture(nullptr, Rect::ZERO );
 }
 
 bool EffectTextureEntity::initWithTexture(Texture2D* texture)
@@ -300,17 +300,27 @@ bool EffectTextureEntity::pretrentTexture(const std::string& filename)
 
 void EffectTextureEntity::OnPretrentSuccess()
 {
-    if (_image)
+    Texture2D *texture = EffectTextureCache::getInstance()->getTextureWithName(_fileName);
+    if (texture)
     {
-        int iWidth = _image->getWidth();
-        int iHeight = _image->getHeight();
+        Rect rect = Rect::ZERO;
+        rect.size = texture->getContentSize();
+        initWithTexture(texture, rect);
+    }
+    else
+    {
+        if (_image)
+        {
+            int iWidth = _image->getWidth();
+            int iHeight = _image->getHeight();
 
-        Texture2D* tex = new Texture2D();
-        tex->initWithData(_image->getData(), _image->getDataLen(), Texture2D::PixelFormat::RGBA8888, iWidth, iHeight, CCSize(iWidth, iHeight));
-        EffectTextureCache::getInstance()->addTextureWithName(_fileName, _effectName, tex);
-        initWithTexture(tex);
+            Texture2D* tex = new Texture2D();
+            tex->initWithData(_image->getData(), _image->getDataLen(), Texture2D::PixelFormat::RGBA8888, iWidth, iHeight, CCSize(iWidth, iHeight));
+            EffectTextureCache::getInstance()->addTextureWithName(_fileName, tex);
+            CC_SAFE_DELETE(_image);
 
-        //CC_SAFE_DELETE(_image);
+            //initWithTexture(tex);
+        }
     }
 }
 
