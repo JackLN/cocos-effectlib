@@ -193,7 +193,8 @@ bool EffectEntity::initWithFile(const std::string& filename)
 
 
 EffectTextureEntity::EffectTextureEntity()
-:_effectTexture(nullptr)
+: _effectTexture(nullptr)
+, _image(nullptr)
 {
 
 }
@@ -209,7 +210,7 @@ bool EffectTextureEntity::initWithFile(const std::string& filename)
     _fileName = filename + _effectName;
     _fileType = 0;
 
-    Texture2D *texture = EffectTextureCache::getInstance()->getTextureWithName(_fileName);
+    Texture2D *texture = EffectTextureCache::getInstance()->getTextureWithName(_fileName,_effectName);
     if (texture)
     {
         Rect rect = Rect::ZERO;
@@ -217,7 +218,9 @@ bool EffectTextureEntity::initWithFile(const std::string& filename)
         return initWithTexture(texture, rect);
     }
 
-    return pretrentTexture(filename);
+    //return pretrentTexture(filename);
+    EffectTextureCache::getInstance()->pretrentTexture(filename,_effectName,this);
+    return initWithTexture(nullptr, Rect::ZERO );;
 }
 
 bool EffectTextureEntity::initWithTexture(Texture2D* texture)
@@ -293,6 +296,22 @@ bool EffectTextureEntity::initWithTexture(Texture2D *texture, const Rect& rect, 
 bool EffectTextureEntity::pretrentTexture(const std::string& filename)
 {
     return false;
+}
+
+void EffectTextureEntity::OnPretrentSuccess()
+{
+    if (_image)
+    {
+        int iWidth = _image->getWidth();
+        int iHeight = _image->getHeight();
+
+        Texture2D* tex = new Texture2D();
+        tex->initWithData(_image->getData(), _image->getDataLen(), Texture2D::PixelFormat::RGBA8888, iWidth, iHeight, CCSize(iWidth, iHeight));
+        EffectTextureCache::getInstance()->addTextureWithName(_fileName, _effectName, tex);
+        initWithTexture(tex);
+
+        //CC_SAFE_DELETE(_image);
+    }
 }
 
 const char* effect_gray_frag = STRINGIFY(
@@ -380,13 +399,13 @@ bool OutGlowEntity::init(const std::string& filename, Color4F glowColor, int ran
 bool OutGlowEntity::pretrentTexture(const std::string& filename)
 {
     std::string fullpath = FileUtils::getInstance()->fullPathForFilename(filename);
-    auto image = new Image();
-    image->initWithImageFile(fullpath);
+    _image = new Image();
+    _image->initWithImageFile(fullpath);
 
-    unsigned char* pImgData = image->getData();
-    auto iDataLen = image->getDataLen();
-    int iWidth = image->getWidth();
-    int iHeight = image->getHeight();
+    unsigned char* pImgData = _image->getData();
+    auto iDataLen = _image->getDataLen();
+    int iWidth = _image->getWidth();
+    int iHeight = _image->getHeight();
 
     //target data
     unsigned char* pTarData = (unsigned char*)(malloc(iDataLen * sizeof(unsigned char)));
@@ -396,7 +415,7 @@ bool OutGlowEntity::pretrentTexture(const std::string& filename)
     int i;
     int j;
     int iMaxOffset = _rangeMax;
-    unsigned char* pDataStart = image->getData();
+    unsigned char* pDataStart = _image->getData();
     for (i = 0; i < iWidth ; ++i)
     {
         for (j = 0; j < iHeight; ++j)
@@ -441,17 +460,17 @@ bool OutGlowEntity::pretrentTexture(const std::string& filename)
     }
 
     //copy image data
-    memcpy(image->getData(), pTarData, image->getDataLen());
+    memcpy(_image->getData(), pTarData, _image->getDataLen());
     CC_SAFE_FREE(pTarData);
 
     //create texture & sprite
     Texture2D* tex = new Texture2D();
-    tex->initWithData(image->getData(), image->getDataLen(), Texture2D::PixelFormat::RGBA8888, iWidth, iHeight, CCSize(iWidth, iHeight));
-    EffectTextureCache::getInstance()->addTextureWithName(filename+_effectName,tex);
-    return initWithTexture(tex);
+    tex->initWithData(_image->getData(), _image->getDataLen(), Texture2D::PixelFormat::RGBA8888, iWidth, iHeight, CCSize(iWidth, iHeight));
+    EffectTextureCache::getInstance()->addTextureWithName(filename,_effectName,tex);
+    CC_SAFE_DELETE(_image);
 
-    //return true;
-}
+    return initWithTexture(tex);
+} 
 
 void OutGlowEntity::setUniformInfo()
 {
@@ -465,4 +484,78 @@ OutGlowEntity::OutGlowEntity()
     _effectName = EFFECT_NAME_OUTGLOW;
     _fragShader = effect_outglow_frag;
 }
+
+void OutGlowEntity::OnPretrent(std::string filename)
+{
+    std::string fullpath = FileUtils::getInstance()->fullPathForFilename(filename);
+    _image = new Image();
+    _image->initWithImageFile(fullpath);
+
+    unsigned char* pImgData = _image->getData();
+    auto iDataLen = _image->getDataLen();
+    int iWidth = _image->getWidth();
+    int iHeight = _image->getHeight();
+
+    //target data
+    unsigned char* pTarData = (unsigned char*)(malloc(iDataLen * sizeof(unsigned char)));
+    memset(pTarData,0,iDataLen * sizeof(unsigned char));
+
+    //change image buffer data
+    int i;
+    int j;
+    int iMaxOffset = _rangeMax;
+    unsigned char* pDataStart = _image->getData();
+    for (i = 0; i < iWidth ; ++i)
+    {
+        for (j = 0; j < iHeight; ++j)
+        {
+            //不透明的不需要处理
+            int offset = (iWidth* i + j) * 4;
+            GLubyte byteValue = *(pImgData += 3);
+            pImgData++;
+            if (byteValue == 255)
+            {
+                *(pTarData + offset+ 3) = 0;
+                continue;
+            }
+                
+            int iOriginA = *(pImgData - 1);
+            int iStartX = std::max(0,i - iMaxOffset);
+            int iEndX = std::min(i + iMaxOffset, iWidth);
+            int iStartY = std::max(0, j - iMaxOffset);
+            int iEndY = std::min(j + iMaxOffset, iHeight);
+
+            int iCnt = 0;
+
+            //在周围的像素点取alpha均值
+            for (int m = iStartX; m < iEndX; ++m)
+            {
+                for (int n = iStartY; n < iEndY; ++n)
+                {
+					int iAlphaTmp = *(pDataStart + (m*iWidth + n) * 4 + 3);
+                    if (iAlphaTmp > 100) //不透明计数
+                        iCnt++;
+                }
+            }
+
+            int iAlpha = std::max(iCnt * 255 / ((iEndY - iStartY) * (iEndX - iStartX)),iOriginA);
+
+            //test
+            //*(pTarData + offset + 1) = 255;
+
+            for (int fpp = 0; fpp < 9999; fpp++)
+            {
+                int fjsi = 9;
+            }
+
+            //save alpha
+            *(pTarData + offset + 3) = iAlpha;
+        }
+    }
+
+    //copy image data
+    memcpy(_image->getData(), pTarData, _image->getDataLen());
+    CC_SAFE_FREE(pTarData);
+}
+
 

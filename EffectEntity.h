@@ -8,7 +8,8 @@ struct IEffectSink;
 
 struct IEffectSink
 {
-    virtual void OnTextureSuccess(Texture2D* texture) {};
+    virtual void OnPretrent(std::string filename) = 0;
+    virtual void OnPretrentSuccess() {};
 };
 
 class EffectCommond : public TrianglesCommand
@@ -24,7 +25,7 @@ protected:
 //2.android环境下从backGround切换回来后是否有问题
 //3.如果需要处理Texture.是否要支持异步
 
-class EffectEntity : public Sprite , public IEffectSink
+class EffectEntity : public Sprite
 {
 public:
     virtual bool initWithFile(const std::string& filename) override;
@@ -39,7 +40,7 @@ protected:
     std::string _fragShader;
 };
 
-class EffectTextureEntity : public EffectEntity
+class EffectTextureEntity : public EffectEntity , public IEffectSink
 {
 public:
     virtual bool initWithFile(const std::string& filename) override;
@@ -48,9 +49,13 @@ public:
     virtual bool initWithTexture(Texture2D *texture, const Rect& rect, bool rotated) override;
     virtual bool pretrentTexture(const std::string& filename); //预处理Texture
     virtual void setUniformInfo(){} //设置uniform值
+public:
+    virtual void OnPretrent(std::string filename) = 0;
+    virtual void OnPretrentSuccess();
 protected:
     EffectTextureEntity();
     Texture2D* _effectTexture;
+    Image* _image;
 };
 
 class GrayEntity : public EffectEntity
@@ -68,6 +73,9 @@ public:
     virtual bool init(const std::string& filename, Color4F glowColor, int rangeMin, int rangeMax);
     virtual bool pretrentTexture(const std::string& filename);
     virtual void setUniformInfo() override;
+public:
+    virtual void OnPretrent(std::string filename);
+    //virtual void OnPretrentSuccess(std::string filename);
 protected:
     OutGlowEntity();
 
