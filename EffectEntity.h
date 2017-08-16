@@ -29,6 +29,7 @@ class EffectEntity : public Sprite
 {
 public:
     virtual bool initWithFile(const std::string& filename) override;
+    virtual bool initWithFrameName(const std::string& framename);
     virtual bool initWithTexture(Texture2D *texture) override;
     virtual bool initWithTexture(Texture2D *texture, const Rect& rect) override;
     virtual bool initWithTexture(Texture2D *texture, const Rect& rect, bool rotated) override;
@@ -44,6 +45,7 @@ class EffectTextureEntity : public EffectEntity , public IEffectSink
 {
 public:
     virtual bool initWithFile(const std::string& filename) override;
+    virtual bool initWithFrameName(const std::string& framename) override;
     virtual bool initWithTexture(Texture2D *texture) override;
     virtual bool initWithTexture(Texture2D *texture, const Rect& rect) override;
     virtual bool initWithTexture(Texture2D *texture, const Rect& rect, bool rotated) override;
@@ -70,7 +72,9 @@ class OutGlowEntity : public EffectTextureEntity
 {
 public:
     static OutGlowEntity* create(const std::string& filename,Color4F glowColor,int rangeMin,int rangeMax);
+    static OutGlowEntity* createWithFrameName(const std::string& frameName, Color4F glowColor, int rangeMin, int rangeMax);
     virtual bool init(const std::string& filename, Color4F glowColor, int rangeMin, int rangeMax);
+    virtual bool initWithFrameName(const std::string& filename, Color4F glowColor, int rangeMin, int rangeMax);
     virtual bool pretrentTexture(const std::string& filename);
     virtual void setUniformInfo() override;
 public:

@@ -568,4 +568,21 @@ void OutGlowEntity::OnPretrent(std::string filename)
     CC_SAFE_FREE(pTarData);
 }
 
+OutGlowEntity* OutGlowEntity::createWithFrameName(const std::string& frameName, Color4F glowColor, int rangeMin, int rangeMax)
+{
+    OutGlowEntity* entity = new (std::nothrow)OutGlowEntity();
+    if (entity && entity->initWithFrameName(frameName, glowColor, rangeMin, rangeMax))
+    {
+        entity->autorelease();
+        return entity;
+    }
+    CC_SAFE_DELETE(entity);
+    return nullptr;
+}
+
+bool OutGlowEntity::initWithFrameName(const std::string& filename, Color4F glowColor, int rangeMin, int rangeMax)
+{
+    return true;
+}
+
 
