@@ -68,9 +68,9 @@ EffectTextureCache * EffectTextureCache::getInstance(void)
  }
 
 
- void EffectTextureCache::pretrentTextureAsync(const std::string& name, IEffectSink* sink)
+ void EffectTextureCache::pretrentTextureAsync(IEffectSink* sink)
  {
-     sink->OnPretrent(name);
+     sink->OnPretrent();
      _mutex.lock();
      _sinks.push_back(sink);
      _mutex.unlock();
@@ -88,7 +88,7 @@ EffectTextureCache * EffectTextureCache::getInstance(void)
      {
          std::vector<IEffectSink*> vec;
          _waitingTextures.insert(std::make_pair(GENERATE_TEX_NAME(name, effectname), vec));
-         auto t = std::thread(&EffectTextureCache::pretrentTextureAsync, this, name, sink);
+         auto t = std::thread(&EffectTextureCache::pretrentTextureAsync, this, sink);
          t.detach();
      }
  }

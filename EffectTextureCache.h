@@ -17,7 +17,7 @@ public:
     Texture2D*         getTextureWithName(const std::string& name);
     GLProgramState*    getOrCreateProgramStateWithShader(std::string name,const GLchar* vShaderByteArray, const GLchar* fShaderByteArray);
 
-    void               pretrentTextureAsync(const std::string& name, IEffectSink* sink);
+    void               pretrentTextureAsync(IEffectSink* sink);
     void               pretrentTexture(const std::string& name, const std::string& effectname, IEffectSink* sink);
     void               onPretrentSuccess(IEffectSink* sink);
 
