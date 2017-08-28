@@ -70,7 +70,13 @@ EffectTextureCache * EffectTextureCache::getInstance(void)
 
  void EffectTextureCache::pretrentTextureAsync(IEffectSink* sink)
  {
-     sink->OnPretrent();
+     auto type = sink->getOriginType();
+     auto name = sink->getOriginName();
+     if (IEffectSink::ORIGIN_TYPE::FILE == type)
+         sink->OnPretrentWithFile(name);
+     else if (IEffectSink::ORIGIN_TYPE::FRAME == type)
+         sink->OnPretrentWithFrame(name);
+
      _mutex.lock();
      _sinks.push_back(sink);
      _mutex.unlock();

@@ -3,30 +3,55 @@
 
 USING_NS_CC;
 
-struct IEffectSink;
-
-
-struct PretrentData
+struct TexData
 {
-    PretrentData()
+    void allocM(int width,int height,int len)
     {
-        pAddress = nullptr;
-        iLen = 0;
-        iWidth = 0;
-        iHeight = 0;
+        pAddress = (unsigned char*)(malloc(len * sizeof(unsigned char)));
+        memset(pAddress,0,len * sizeof(unsigned char));
+        iDataLen = len;
+        iWidth = width;
+        iHeight = height;
+    }
+    void freeM()
+    {
+        CC_SAFE_FREE(pAddress);
+    }
+    void copyM(unsigned char* src,int len)
+    {
+        memcpy(pAddress, src, len);
     }
 
-    unsigned char* pAddress;
-    int iLen;
-    int iWidth;
-    int iHeight;
-    Size mSize;
+    unsigned char*          getData()          { return pAddress; }
+    int                     getWidth()         { return iWidth; }
+    int                     getHeight()        { return iHeight; }
+    int                     getDataLen()       { return iDataLen; }
+
+    unsigned char*          pAddress           = nullptr;
+    int                     iDataLen           = 0;
+    int                     iWidth             = 0;
+    int                     iHeight            = 0;
 };
 
+struct IEffectSink;
 struct IEffectSink
 {
-    virtual void OnPretrent(const PretrentData &data) = 0;
-    virtual void OnPretrent(){};
+    enum ORIGIN_TYPE
+    {
+        FILE,
+        FRAME,
+
+        INVALID,
+    };
+    ORIGIN_TYPE getOriginType() { return _originType; }
+    ORIGIN_TYPE _originType;
+
+    std::string getOriginName() { return _originName; }
+    std::string _originName;
+
+    virtual void OnPretrent() = 0;
+    virtual void OnPretrentWithFile(std::string fileName) = 0;
+    virtual void OnPretrentWithFrame(std::string frameName) = 0;
     virtual void OnPretrentSuccess() {};
 };
 
@@ -46,14 +71,6 @@ protected:
 class EffectEntity : public Sprite
 {
 public:
-    enum ORIGIN_TYPE
-    {
-        FILE,
-        FRAME,
-
-        INVALID,
-    };
-public:
     virtual bool initWithFile(const std::string& filename) override;
     virtual bool initWithFrameName(const std::string& framename);
     virtual bool initWithTexture(Texture2D *texture) override;
@@ -65,7 +82,6 @@ protected:
 	EffectCommond _effectCommond;
     std::string _effectName;
     std::string _fragShader;
-    ORIGIN_TYPE _originType;
 };
 
 class EffectTextureEntity : public EffectEntity , public IEffectSink
@@ -78,17 +94,14 @@ public:
     virtual bool initWithTexture(Texture2D *texture, const Rect& rect, bool rotated) override;
     virtual void setUniformInfo(){} //…Ë÷√uniform÷µ
 public:
-    virtual void OnPretrent(const PretrentData &data) = 0;
-    virtual void OnPretrent();
     virtual void OnPretrentSuccess();
-    virtual void OnPretrent(std::string filename);
-    virtual void OnPretrent(SpriteFrame* frame);
+    virtual void OnPretrentWithFile(std::string fileName);
+    virtual void OnPretrentWithFrame(std::string frameName);
 protected:
     EffectTextureEntity();
     ~EffectTextureEntity();
     Texture2D* _effectTexture;
-    std::string _originName;
-    PretrentData _pretrentData;
+    TexData _texData;
 };
 
 class GrayEntity : public EffectEntity
@@ -108,7 +121,7 @@ public:
     virtual bool initWithFrameName(const std::string& filename, Color4F glowColor, int rangeMin, int rangeMax);
     virtual void setUniformInfo() override;
 public:
-    virtual void OnPretrent(const PretrentData &data);
+    virtual void OnPretrent();
     //virtual void OnPretrent(std::string filename);
     //virtual void OnPretrentSuccess(std::string filename);
 protected:
