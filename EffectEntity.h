@@ -26,11 +26,13 @@ struct TexData
     int                     getWidth()         { return iWidth; }
     int                     getHeight()        { return iHeight; }
     int                     getDataLen()       { return iDataLen; }
+    bool                    getIsRotate()      { return bRotate; }
 
     unsigned char*          pAddress           = nullptr;
     int                     iDataLen           = 0;
     int                     iWidth             = 0;
     int                     iHeight            = 0;
+    bool                    bRotate            = false;
 };
 
 struct IEffectSink;
@@ -100,8 +102,9 @@ public:
 protected:
     EffectTextureEntity();
     ~EffectTextureEntity();
-    Texture2D* _effectTexture;
     TexData _texData;
+    int _addWidth;
+    int _addHeight;
 };
 
 class GrayEntity : public EffectEntity

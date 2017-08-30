@@ -198,7 +198,8 @@ bool EffectEntity::initWithFrameName(const std::string& framename)
 
 
 EffectTextureEntity::EffectTextureEntity()
-: _effectTexture(nullptr)
+: _addWidth(0)
+, _addHeight(0)
 {
 
 }
@@ -306,7 +307,7 @@ void EffectTextureEntity::OnPretrentSuccess()
     {
         Rect rect = Rect::ZERO;
         rect.size = texture->getContentSize();
-        initWithTexture(texture, rect);
+        initWithTexture(texture, rect, _texData.getIsRotate());
     }
     else
     {
@@ -381,20 +382,38 @@ void EffectTextureEntity::OnPretrentWithFrame(std::string framename)
     int iHeight = frame->getOriginalSize().height;
     int iOriginWidth = image->getWidth();
     int iOriginHeight = image->getHeight();
+    bool bRotate = frame->isRotated();
 
-    _texData.allocM(iWidth, iHeight, iDataLen);
+    iWidth += _addWidth;
+    iHeight += _addHeight;
+    _texData.allocM(iWidth, iHeight, iWidth*iHeight*4);
+    _texData.bRotate = bRotate;
 
     auto dataAddr = _texData.getData();
+
+    int iAddHeight = _addHeight / 2;
+    int iAddWidth = _addWidth / 2;
+
+    if (bRotate)
+    {
+        int tmp = iWidth;
+        iWidth = iHeight;
+        iHeight = tmp;
+
+        tmp = iAddHeight;
+        iAddHeight = iAddWidth;
+        iAddWidth = tmp;
+    }
 
     //get target image data buffer
     int i;
     int j;
-    for (i = 0; i < iHeight; ++i)
+    for (i = iAddHeight; i < iHeight - iAddHeight; ++i)
     {
-        for (j = 0; j < iWidth; ++j)
+        for (j = iAddWidth; j < iWidth -  iAddWidth; ++j)
         {
             int offset = (iWidth * i + j) * 4;
-            int originOffset = (iOriginWidth * (i + (int)offsetPix.y) + j + (int)offsetPix.x) * 4;
+            int originOffset = (iOriginWidth * (i - iAddHeight + (int)offsetPix.y) + j - iAddWidth + (int)offsetPix.x) * 4;
             *(dataAddr + offset + 0) = *(pImgData + originOffset + 0);
             *(dataAddr + offset + 1) = *(pImgData + originOffset + 1);
             *(dataAddr + offset + 2) = *(pImgData + originOffset + 2);
@@ -402,7 +421,6 @@ void EffectTextureEntity::OnPretrentWithFrame(std::string framename)
         }
     }
     CC_SAFE_DELETE(image);
-
     OnPretrent();
 }
 
@@ -499,6 +517,9 @@ bool OutGlowEntity::initWithFrameName(const std::string& filename, Color4F glowC
     _rangeMax = rangeMax;
     _rangeMin = rangeMin;
 
+    _addWidth = rangeMax*2;
+    _addHeight = rangeMax*2;
+    
     return EffectTextureEntity::initWithFrameName(filename);
 }
 
