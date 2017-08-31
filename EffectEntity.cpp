@@ -307,7 +307,7 @@ void EffectTextureEntity::OnPretrentSuccess()
     {
         Rect rect = Rect::ZERO;
         rect.size = texture->getContentSize();
-        initWithTexture(texture, rect, _texData.getIsRotate());
+        initWithTexture(texture, rect);
     }
     else
     {
@@ -387,39 +387,47 @@ void EffectTextureEntity::OnPretrentWithFrame(std::string framename)
     iWidth += _addWidth;
     iHeight += _addHeight;
     _texData.allocM(iWidth, iHeight, iWidth*iHeight*4);
-    _texData.bRotate = bRotate;
 
     auto dataAddr = _texData.getData();
 
     int iAddHeight = _addHeight / 2;
     int iAddWidth = _addWidth / 2;
 
-    if (bRotate)
-    {
-        int tmp = iWidth;
-        iWidth = iHeight;
-        iHeight = tmp;
-
-        tmp = iAddHeight;
-        iAddHeight = iAddWidth;
-        iAddWidth = tmp;
-    }
-
-    //get target image data buffer
     int i;
     int j;
-    for (i = iAddHeight; i < iHeight - iAddHeight; ++i)
+    if (bRotate)
     {
-        for (j = iAddWidth; j < iWidth -  iAddWidth; ++j)
+        for (i = iAddHeight; i < iHeight - iAddHeight; ++i)
         {
-            int offset = (iWidth * i + j) * 4;
-            int originOffset = (iOriginWidth * (i - iAddHeight + (int)offsetPix.y) + j - iAddWidth + (int)offsetPix.x) * 4;
-            *(dataAddr + offset + 0) = *(pImgData + originOffset + 0);
-            *(dataAddr + offset + 1) = *(pImgData + originOffset + 1);
-            *(dataAddr + offset + 2) = *(pImgData + originOffset + 2);
-            *(dataAddr + offset + 3) = *(pImgData + originOffset + 3);
+            for (j = iAddWidth; j < iWidth - iAddWidth; ++j)
+            {
+                int offset = (iWidth * i + j) * 4;
+                int originOffset = (iOriginWidth * (j - iAddWidth + (int)offsetPix.y) - i - iAddHeight + iHeight + (int)offsetPix.x) * 4;
+                *(dataAddr + offset + 0) = *(pImgData + originOffset + 0);
+                *(dataAddr + offset + 1) = *(pImgData + originOffset + 1);
+                *(dataAddr + offset + 2) = *(pImgData + originOffset + 2);
+                *(dataAddr + offset + 3) = *(pImgData + originOffset + 3);
+            }
         }
     }
+    else
+    {
+        
+        for (i = iAddHeight; i < iHeight - iAddHeight; ++i)
+        {
+            for (j = iAddWidth; j < iWidth - iAddWidth; ++j)
+            {
+                int offset = (iWidth * i + j) * 4;
+                int originOffset = (iOriginWidth * (i - iAddHeight + (int)offsetPix.y) + j - iAddWidth + (int)offsetPix.x) * 4;
+                *(dataAddr + offset + 0) = *(pImgData + originOffset + 0);
+                *(dataAddr + offset + 1) = *(pImgData + originOffset + 1);
+                *(dataAddr + offset + 2) = *(pImgData + originOffset + 2);
+                *(dataAddr + offset + 3) = *(pImgData + originOffset + 3);
+            }
+        }
+    }
+    //get target image data buffer
+    
     CC_SAFE_DELETE(image);
     OnPretrent();
 }

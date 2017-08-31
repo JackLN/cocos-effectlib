@@ -26,13 +26,11 @@ struct TexData
     int                     getWidth()         { return iWidth; }
     int                     getHeight()        { return iHeight; }
     int                     getDataLen()       { return iDataLen; }
-    bool                    getIsRotate()      { return bRotate; }
 
     unsigned char*          pAddress           = nullptr;
     int                     iDataLen           = 0;
     int                     iWidth             = 0;
     int                     iHeight            = 0;
-    bool                    bRotate            = false;
 };
 
 struct IEffectSink;
