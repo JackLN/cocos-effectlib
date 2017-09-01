@@ -378,8 +378,8 @@ void EffectTextureEntity::OnPretrentWithFrame(std::string framename)
 
     unsigned char* pImgData = image->getData();
     auto iDataLen = image->getDataLen();
-    int iWidth = frame->getOriginalSize().width;
-    int iHeight = frame->getOriginalSize().height;
+    int iWidth = rect.size.width;
+    int iHeight = rect.size.height;
     int iOriginWidth = image->getWidth();
     int iOriginHeight = image->getHeight();
     bool bRotate = frame->isRotated();
